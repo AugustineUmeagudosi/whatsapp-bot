@@ -1,17 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 
-// Load environment variables
 dotenv.config();
 
-// Determine the appropriate database URL based on NODE_ENV
 const databaseUrl = process.env.NODE_ENV === "test" ? process.env.TEST_DB : process.env.DEV_DB;
-
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is not defined. Ensure .env files are configured correctly.");
 }
 
-// Initialize Prisma Client with the selected database URL
 const prisma = new PrismaClient({
   datasources: {
     db: {
