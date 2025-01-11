@@ -7,5 +7,5 @@
       "skipLibCheck": true,
       "outDir": "dist"
     },
-    "include": ["src", "test", "prisma/prismaClient.ts", "botHandler.ts"]
+    "include": ["src", "test", "prisma/prismaClient.ts", "src/botHandler/whatsappBot.ts"]
 }
