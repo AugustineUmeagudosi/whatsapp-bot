@@ -1,0 +1,25 @@
+{
+    "name": "nodejs-prisma-mocha",
+    "version": "1.0.0",
+    "main": "index.js",
+    "license": "MIT",
+    "scripts": {
+        "migrate:create": "npx prisma migrate dev",
+        "migrate:deploy": "npx prisma migrate deploy",
+        "setup": "NODE_ENV=test npx prisma migrate deploy",
+        "test": "NODE_ENV=test DATABASE_URL=$(grep ^TEST_DB .env | cut -d '=' -f2) npm run setup && mocha --require ts-node/register test/**/*.test.ts",        "start": "ts-node src/index.ts"
+    },
+    "dependencies": {
+        "@prisma/client": "^6.2.1",
+        "dotenv": "^16.0.3",
+        "prisma": "^6.2.1"
+    },
+    "devDependencies": {
+        "@types/chai": "^4.3.0",
+        "@types/mocha": "^10.0.10",
+        "chai": "^4.3.6",
+        "mocha": "^10.2.0",
+        "ts-node": "^10.9.1",
+        "typescript": "^5.2.2"
+    }
+}
