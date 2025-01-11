@@ -7,5 +7,5 @@
       "skipLibCheck": true,
       "outDir": "dist"
     },
-    "include": ["src", "test"]
+    "include": ["src", "test", "prisma/prismaClient.ts", "botHandler.ts"]
 }
