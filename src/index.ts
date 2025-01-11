@@ -6,20 +6,20 @@ app.use(express.json());
 
 // API to create a new user
 app.post('/users', async (req, res) => {
-  const { email, name } = req.body;
+  const { phone, name } = req.body;
 
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
+  if (!phone) {
+    return res.status(400).json({ error: 'phone is required' });
   }
 
   try {
     const newUser = await prisma.user.create({
-      data: { email, name },
+      data: { phone, name },
     });
     res.status(201).json(newUser);
   } catch (error: any) {
     if (error.code === 'P2002') {
-      res.status(409).json({ error: 'Email already exists' });
+      res.status(409).json({ error: 'phone already exists' });
     } else {
       res.status(500).json({ error: 'Internal server error' });
     }
