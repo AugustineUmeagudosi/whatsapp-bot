@@ -1,25 +1,52 @@
 import qrcode from 'qrcode';
 import { Client, LocalAuth, Message } from 'whatsapp-web.js';
+import fs from 'fs';
+import prisma from '../../prisma/prismaClient';
+
+const QR_FILE_PATH = './qr-code.json';
+const QR_IMAGE_PATH = './qr-code.png';
 
 export class WhatsAppBot {
   private client: Client;
+  private qrCodeGenerated: boolean;
 
   constructor() {
     this.client = new Client({
       authStrategy: new LocalAuth(),
     });
+    this.qrCodeGenerated = false;
 
     this.setupEventHandlers();
   }
 
   private setupEventHandlers() {
     this.client.on('qr', async (qrCode: string) => {
-      try {
-        console.log('Scan this QR code with WhatsApp:');
-        const terminalQR = await qrcode.toString(qrCode, { type: 'terminal', small: true });
-        console.log(terminalQR); // Outputs a QR code to the terminal
-      } catch (error) {
-        console.error('Error generating QR code:', error);
+      if (!this.qrCodeGenerated) {
+        try {
+          console.log('Scan this QR code with WhatsApp:');
+
+          // Save QR code data to JSON
+          fs.writeFileSync(QR_FILE_PATH, JSON.stringify({ qrCode }), 'utf-8');
+
+          // Generate QR code as PNG and terminal string
+          await qrcode.toFile(QR_IMAGE_PATH, qrCode, {
+            errorCorrectionLevel: 'M',
+            scale: 8,
+            margin: 4,
+            color: {
+              dark: '#000000',
+              light: '#ffffff',
+            },
+          });
+
+          const terminalQR = await qrcode.toString(qrCode, { type: 'terminal', small: true });
+          console.log(terminalQR); // Outputs a QR code to the terminal
+
+          console.log(`QR code saved to ${QR_FILE_PATH} and ${QR_IMAGE_PATH}`);
+          this.qrCodeGenerated = true;
+        } catch (error) {
+          console.error('Error generating QR code:', error);
+        }
       }
     });
 
@@ -40,9 +67,11 @@ export class WhatsAppBot {
     });
 
     this.client.on('message', (message: Message) => {
-      console.log('Message received:', message.body);
+      const userId = parseInt(message.from.replace(/\D/g, ''));
+      console.log(`Message received from ${userId}`, message.body);
+
       if (message.body.toLowerCase() === 'hi') {
-        message.reply('Hello! How can I assist you today?');
+        message.reply("Hi! I'm Chaty, your support assistant. What's your name?");
       }
     });
 
@@ -53,6 +82,11 @@ export class WhatsAppBot {
   }
 
   public initialize() {
+    if (fs.existsSync(QR_FILE_PATH)) {
+      console.log(`QR code already saved at ${QR_FILE_PATH}. Please use it for reconnection.`);
+    } else {
+      console.log('No saved QR code found. Generating a new QR code...');
+    }
     this.client.initialize();
   }
 }
