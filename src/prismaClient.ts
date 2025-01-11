@@ -16,7 +16,7 @@ const prisma = new PrismaClient({
   },
 });
 
-// Use middleware to log query execution time
+// log query execution time
 if (process.env.NODE_ENV === "development") {
   prisma.$use(async (params, next) => {
     const { model, action, args } = params;

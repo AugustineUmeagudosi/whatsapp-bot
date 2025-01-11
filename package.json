@@ -4,8 +4,10 @@
     "main": "index.js",
     "license": "MIT",
     "scripts": {
-        "test": "NODE_ENV=test mocha --require ts-node/register test/**/*.test.ts",
-        "start": "ts-node src/index.ts"
+        "migrate:create": "npx prisma migrate dev",
+        "migrate:deploy": "npx prisma migrate deploy",
+        "setup": "NODE_ENV=test npx prisma migrate deploy",
+        "test": "NODE_ENV=test DATABASE_URL=$(grep ^TEST_DB .env | cut -d '=' -f2) npm run setup && mocha --require ts-node/register test/**/*.test.ts",        "start": "ts-node src/index.ts"
     },
     "dependencies": {
         "@prisma/client": "^6.2.1",
