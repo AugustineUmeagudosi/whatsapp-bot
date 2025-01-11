@@ -15,19 +15,19 @@ describe('Prisma User model', () => {
   it('should create a new user', async () => {
     const user = await prisma.user.create({
       data: {
-        email: 'test@example.com',
+        phone: '+2347382',
         name: 'Test User',
       },
     });
     expect(user).to.have.property('id');
-    expect(user.email).to.equal('test@example.com');
+    expect(user.phone).to.equal('+2347382');
   });
 
-  it('should retrieve a user by email', async () => {
+  it('should retrieve a user by phone', async () => {
     const user = await prisma.user.findUnique({
-      where: { email: 'test@example.com' },
+      where: { phone: '+2347382' },
     });
     expect(user).to.not.be.null;
-    expect(user?.email).to.equal('test@example.com');
+    expect(user?.phone).to.equal('+2347382');
   });
 });
