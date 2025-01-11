@@ -1,7 +1,12 @@
 import qrcode from 'qrcode';
 import { Client, LocalAuth, Message } from 'whatsapp-web.js';
 import fs from 'fs';
-import prisma from '../../prisma/prismaClient';
+import {
+  createOrUpdateUser,
+  getUserByWhatsAppId,
+  getFaqAnswer,
+  logQuery,
+} from './botService';
 
 const QR_FILE_PATH = './qr-code.json';
 const QR_IMAGE_PATH = './qr-code.png';
@@ -9,12 +14,14 @@ const QR_IMAGE_PATH = './qr-code.png';
 export class WhatsAppBot {
   private client: Client;
   private qrCodeGenerated: boolean;
+  private userSessions: Map<string, string>;
 
   constructor() {
     this.client = new Client({
       authStrategy: new LocalAuth(),
     });
     this.qrCodeGenerated = false;
+    this.userSessions = new Map();
 
     this.setupEventHandlers();
   }
@@ -24,24 +31,15 @@ export class WhatsAppBot {
       if (!this.qrCodeGenerated) {
         try {
           console.log('Scan this QR code with WhatsApp:');
-
-          // Save QR code data to JSON
           fs.writeFileSync(QR_FILE_PATH, JSON.stringify({ qrCode }), 'utf-8');
-
-          // Generate QR code as PNG and terminal string
           await qrcode.toFile(QR_IMAGE_PATH, qrCode, {
             errorCorrectionLevel: 'M',
             scale: 8,
             margin: 4,
-            color: {
-              dark: '#000000',
-              light: '#ffffff',
-            },
+            color: { dark: '#000000', light: '#ffffff' },
           });
-
           const terminalQR = await qrcode.toString(qrCode, { type: 'terminal', small: true });
-          console.log(terminalQR); // Outputs a QR code to the terminal
-
+          console.log(terminalQR);
           console.log(`QR code saved to ${QR_FILE_PATH} and ${QR_IMAGE_PATH}`);
           this.qrCodeGenerated = true;
         } catch (error) {
@@ -66,12 +64,56 @@ export class WhatsAppBot {
       console.log('Client was logged out:', reason);
     });
 
-    this.client.on('message', (message: Message) => {
-      const userId = parseInt(message.from.replace(/\D/g, ''));
-      console.log(`Message received from ${userId}`, message.body);
+    this.client.on('message', async (message: Message) => {
+      const userId = message.from;
+      console.log(`Message received from ${userId}:`, message.body);
 
-      if (message.body.toLowerCase() === 'hi') {
-        message.reply("Hi! I'm Chaty, your support assistant. What's your name?");
+      if (!this.userSessions.has(userId)) {
+        this.userSessions.set(userId, '');
+        await message.reply("Hi! I'm Chaty, your support assistant. What's your name?");
+        return;
+      }
+
+      const userName = this.userSessions.get(userId);
+
+      if (!userName) {
+        this.userSessions.set(userId, message.body);
+        await createOrUpdateUser(userId, message.body);
+        await message.reply(`Nice to meet you, ${message.body}! How can I assist you today? you can type 'help' to see a list of commands`);
+        return;
+      }
+
+      const query = message.body.toLowerCase();
+
+      if (query === 'help') {
+        await message.reply("type: 'exit' to end the session and 'reset' to reset the session");
+        return;
+      }
+
+      if (query === 'exit') {
+        this.userSessions.delete(userId);
+        await message.reply('Your session has been ended. Have a great day!');
+        return;
+      }
+
+      if (query === 'reset') {
+        this.userSessions.set(userId, '');
+        await message.reply("Let's start over. What's your name?");
+        return;
+      }
+
+      const faqAnswer = await getFaqAnswer(query);
+
+      if (faqAnswer) {
+        await message.reply(faqAnswer);
+      } else {
+        // TODO: add AI service here
+        // await message.reply("I'm not sure about that. Let me get back to you later.");
+      }
+
+      const user = await getUserByWhatsAppId(userId);
+      if (user) {
+        await logQuery(user.id, query, faqAnswer || 'No answer available');
       }
     });
 
