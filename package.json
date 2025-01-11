@@ -6,17 +6,22 @@
     "scripts": {
         "migrate:generate": "npx prisma migrate dev",
         "migrate:deploy": "npx prisma migrate deploy",
-        "setup": "NODE_ENV=test npx prisma migrate deploy",
-        "test": "NODE_ENV=test DATABASE_URL=$(grep ^TEST_DB .env | cut -d '=' -f2) npm run setup && mocha --require ts-node/register test/**/*.test.ts",        "start": "ts-node src/index.ts"
+        "prestart": "npm run migrate:generate && npm run migrate:deploy",
+        "pretest": "NODE_ENV=test DATABASE_URL=$(grep ^TEST_DB .env | cut -d '=' -f2) npm run migrate:deploy",
+        "test": "mocha --require ts-node/register test/**/*.test.ts",
+        "start": "ts-node botHandler.ts"
     },
     "dependencies": {
         "@prisma/client": "^6.2.1",
         "dotenv": "^16.0.3",
-        "prisma": "^6.2.1"
+        "prisma": "^6.2.1",
+        "qrcode": "^1.5.4",
+        "whatsapp-web.js": "^1.26.0"
     },
     "devDependencies": {
         "@types/chai": "^4.3.0",
         "@types/mocha": "^10.0.10",
+        "@types/qrcode": "^1.5.5",
         "chai": "^4.3.6",
         "mocha": "^10.2.0",
         "ts-node": "^10.9.1",
