@@ -25,7 +25,8 @@ export class WhatsAppBot {
     
     if (process.env.NODE_ENV === 'production') {
       clientOptions.puppeteer = {
-        executablePath: '/usr/bin/chromium-browser', // Replace with your actual path
+        executablePath: '/usr/bin/chromium-browser',
+        userDataDir: '/home/ubuntu/puppeteer_profile',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
