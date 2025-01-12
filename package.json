@@ -6,14 +6,15 @@
     "scripts": {
         "migrate:generate": "npx prisma migrate dev",
         "migrate:deploy": "npx prisma migrate deploy",
-        "prestart": "npm run migrate:generate && npm run migrate:deploy",
         "pretest": "NODE_ENV=test DATABASE_URL=$(grep ^TEST_DB .env | cut -d '=' -f2) npm run migrate:deploy",
         "test": "mocha --require ts-node/register test/**/*.test.ts",
-        "start": "ts-node botHandler.ts"
+        "start": "ts-node index.ts"
     },
     "dependencies": {
+        "@google/generative-ai": "^0.21.0",
         "@prisma/client": "^6.2.1",
         "dotenv": "^16.0.3",
+        "helmet": "^8.0.0",
         "prisma": "^6.2.1",
         "qrcode": "^1.5.4",
         "whatsapp-web.js": "^1.26.0"

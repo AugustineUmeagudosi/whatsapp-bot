@@ -8,10 +8,12 @@ generator client {
 }
 
 model User {
-    id         Int      @id @default(autoincrement())
+    id         Int        @id @default(autoincrement())
     name       String
-    created_at DateTime @default(now()) @db.Timestamptz(6)
-    updated_at DateTime @default(now()) @db.Timestamptz(6)
+    phone      String     @unique
+    created_at DateTime   @default(now()) @db.Timestamptz(6)
+    updated_at DateTime   @default(now()) @db.Timestamptz(6)
+    queryLogs  QueryLog[]
 }
 
 model FAQ {
@@ -23,6 +25,7 @@ model FAQ {
 model QueryLog {
     id         Int      @id @default(autoincrement())
     userId     Int
+    user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
     question   String
     answer     String
     created_at DateTime @default(now()) @db.Timestamptz(6)
