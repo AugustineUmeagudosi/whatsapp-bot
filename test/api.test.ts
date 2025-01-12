@@ -21,4 +21,10 @@ describe('API Tests', () => {
     expect(res.status).to.equal(200);
     expect(res.body).to.have.property('message', 'Pong!');
   });
+
+  it('should respond with a 404 message for non registered routes', async () => {
+    const res = await request(app).get('/invalid-route');
+    expect(res.status).to.equal(404);
+    expect(res.body).to.have.property('message', 'The resource you are looking for was not found!');
+  });
 });

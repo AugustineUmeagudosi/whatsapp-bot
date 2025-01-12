@@ -15,6 +15,10 @@ app.get('/api/ping', (req: Request, res: Response) => {
   res.json({ message: 'Pong!' });
 });
 
+app.use('*', (req: Request, res: Response) => {
+  res.status(404).json({ message: 'The resource you are looking for was not found!' });
+});
+
 let bot: WhatsAppBot | null = null;
 
 if (process.env.NODE_ENV !== 'test') {
