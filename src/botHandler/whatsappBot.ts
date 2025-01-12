@@ -20,6 +20,7 @@ export class WhatsAppBot {
   constructor() {
     const clientOptions: any = {
       authStrategy: new LocalAuth(),
+      dataPath: './session',
     };
     
     if (process.env.NODE_ENV === 'production') {
