@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import request from 'supertest';
 import { app, server, bot } from '../index';
+import fs from 'fs';
+import path from 'path';
 
 describe('API Tests', () => {
   after(async () => {
@@ -27,4 +29,19 @@ describe('API Tests', () => {
     expect(res.status).to.equal(404);
     expect(res.body).to.have.property('message', 'The resource you are looking for was not found!');
   });
+
+  it('should respond with the QR code image if it exists, or a 404 message if it does not', async () => {
+    const qrCodePath = path.resolve('./qr-code.png');
+
+    if (fs.existsSync(qrCodePath)) {
+      const res = await request(app).get('/qrcode');
+      expect(res.status).to.equal(200);
+      expect(res.headers['content-type']).to.include('image/png');
+    } else {
+      // Test case where the QR code file does not exist
+      const res = await request(app).get('/qrcode');
+      expect(res.status).to.equal(404);
+      expect(res.body).to.have.property('message', 'QR code not found.');
+    }
+  });  
 });

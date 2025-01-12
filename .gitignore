@@ -132,3 +132,7 @@ dist
 
 .wwebjs_auth/
 .wwebjs_cache/
+session/
+
+qr-code.json
+qr-code.png
