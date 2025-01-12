@@ -21,11 +21,7 @@ export class WhatsAppBot {
     const clientOptions: any = {
       authStrategy: new LocalAuth(),
       dataPath: './session',
-    };
-    
-    if (process.env.NODE_ENV === 'production') {
-      clientOptions.puppeteer = {
-        executablePath: '/usr/bin/chromium-browser',
+      puppeteer: {
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -33,16 +29,18 @@ export class WhatsAppBot {
           '--disable-extensions',
           '--disable-gpu',
         ],
-      };
+      }
+    };
+    
+    if (process.env.NODE_ENV === 'production') {
+      clientOptions.puppeteer.executablePath = '/snap/bin/chromium';
     }
-
-    // Remove userDataDir to avoid conflict with LocalAuth
     this.client = new Client(clientOptions);
     this.qrCodeGenerated = false;
     this.userSessions = new Map();
   
     this.setupEventHandlers();
-  }
+  }  
 
   private setupEventHandlers() {
     this.client.on('qr', async (qrCode: string) => {
