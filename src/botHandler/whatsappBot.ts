@@ -6,7 +6,8 @@ import {
   getUserByWhatsAppId,
   getFaqAnswer,
   logQuery,
-} from './botService';
+} from '../services/dbServices';
+import { queryGenerativeAI } from '../services/germini';
 
 const QR_FILE_PATH = './qr-code.json';
 const QR_IMAGE_PATH = './qr-code.png';
@@ -66,6 +67,8 @@ export class WhatsAppBot {
 
     this.client.on('message', async (message: Message) => {
       const userId = message.from;
+      if(!userId) return console.log(`Invalid userId: ${userId}`);
+
       console.log(`Message received from ${userId}:`, message.body);
 
       if (!this.userSessions.has(userId)) {
@@ -103,17 +106,17 @@ export class WhatsAppBot {
       }
 
       const faqAnswer = await getFaqAnswer(query);
-
+      let aiResponse = 'AI generated response';
       if (faqAnswer) {
         await message.reply(faqAnswer);
       } else {
-        // TODO: add AI service here
-        // await message.reply("I'm not sure about that. Let me get back to you later.");
+        aiResponse = await queryGenerativeAI(query);
+        await message.reply(aiResponse);
       }
 
       const user = await getUserByWhatsAppId(userId);
       if (user) {
-        await logQuery(user.id, query, faqAnswer || 'No answer available');
+        await logQuery(user.id, query, faqAnswer || aiResponse);
       }
     });
 
