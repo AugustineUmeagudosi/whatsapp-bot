@@ -110,7 +110,7 @@ export class WhatsAppBot {
       if (faqAnswer) {
         await message.reply(faqAnswer);
       } else {
-        aiResponse = await queryGenerativeAI(query);
+        aiResponse = process.env.NODE_ENV === 'test' ? 'AI generated response' : await queryGenerativeAI(query);
         await message.reply(aiResponse);
       }
 
@@ -133,5 +133,14 @@ export class WhatsAppBot {
       console.log('No saved QR code found. Generating a new QR code...');
     }
     this.client.initialize();
+  }
+
+  public async stop() {
+    try {
+      await this.client.destroy();
+      console.log('WhatsApp bot stopped');
+    } catch (err) {
+      console.error('Error stopping WhatsApp bot:', err);
+    }
   }
 }
