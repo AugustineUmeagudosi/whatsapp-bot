@@ -26,7 +26,6 @@ export class WhatsAppBot {
     if (process.env.NODE_ENV === 'production') {
       clientOptions.puppeteer = {
         executablePath: '/usr/bin/chromium-browser',
-        userDataDir: '/home/ubuntu/puppeteer_profile',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -35,12 +34,13 @@ export class WhatsAppBot {
           '--disable-gpu',
         ],
       };
-    }    
+    }
 
+    // Remove userDataDir to avoid conflict with LocalAuth
     this.client = new Client(clientOptions);
     this.qrCodeGenerated = false;
     this.userSessions = new Map();
-
+  
     this.setupEventHandlers();
   }
 
@@ -83,7 +83,7 @@ export class WhatsAppBot {
     });
 
     this.client.on('message', async (message: Message) => {
-      const userId = message.from;
+      const userId = message.from.split('@')[0];
       if(!userId) return console.log(`Invalid userId: ${userId}`);
 
       console.log(`Message received from ${userId}:`, message.body);
