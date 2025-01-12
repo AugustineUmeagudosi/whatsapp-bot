@@ -8,7 +8,7 @@ import {
   logQuery,
 } from '../services/dbServices';
 import { queryGenerativeAI } from '../services/germini';
-
+  
 const QR_FILE_PATH = './qr-code.json';
 const QR_IMAGE_PATH = './qr-code.png';
 
@@ -18,9 +18,18 @@ export class WhatsAppBot {
   private userSessions: Map<string, string>;
 
   constructor() {
-    this.client = new Client({
+    const clientOptions: any = {
       authStrategy: new LocalAuth(),
-    });
+    };
+    
+    if (process.env.NODE_ENV === 'production') {
+      clientOptions.puppeteer = {
+        executablePath: '/usr/bin/chromium-browser', // Replace with your actual path
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      };
+    }    
+
+    this.client = new Client(clientOptions);
     this.qrCodeGenerated = false;
     this.userSessions = new Map();
 
