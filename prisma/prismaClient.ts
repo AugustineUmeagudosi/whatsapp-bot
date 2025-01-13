@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const databaseUrl = process.env.NODE_ENV === "test" ? process.env.TEST_DB : process.env.DEV_DB;
+const databaseUrl = process.env.NODE_ENV === "test" ? process.env.TEST_DB : process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is not defined. Ensure .env files are configured correctly.");
 }
