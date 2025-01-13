@@ -36,8 +36,3 @@ export async function seedFAQs() {
     await prisma.$disconnect();
   }
 }
-
-seedFAQs().catch((error) => {
-  console.error("Error running FAQ seeder:", error);
-  process.exit(1); // Exit with an error code if seeding fails
-});
