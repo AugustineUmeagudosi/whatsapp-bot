@@ -7,7 +7,7 @@
         "migrate:generate": "npx prisma migrate dev",
         "migrate:deploy": "npx prisma migrate deploy",
         "pretest": "NODE_ENV=test DATABASE_URL=$(grep ^TEST_DB .env | cut -d '=' -f2) npm run migrate:deploy",
-        "test": "NODE_ENV=test mocha --require ts-node/register test/**/*.test.ts",
+        "test": "NODE_ENV=test mocha --require ts-node/register test/**/*.test.ts --timeout 1000 --exit",
         "start": "ts-node index.ts"
     },
     "dependencies": {
