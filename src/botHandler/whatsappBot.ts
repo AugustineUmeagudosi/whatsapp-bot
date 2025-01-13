@@ -1,25 +1,37 @@
-import qrcode from 'qrcode';
 import { Client, LocalAuth, Message } from 'whatsapp-web.js';
+import qrcode from 'qrcode';
 import fs from 'fs';
-import {
-  createOrUpdateUser,
-  getUserByWhatsAppId,
-  getFaqAnswer,
-  logQuery,
-} from '../services/dbServices';
-import { queryGenerativeAI } from '../services/germini';
-  
+import path from 'path';
+
 const QR_FILE_PATH = './qr-code.json';
 const QR_IMAGE_PATH = './qr-code.png';
+const AUTH_DIRECTORY = './.wwebjs_auth'; // Directory for LocalAuth session
 
 export class WhatsAppBot {
   private client: Client;
   private qrCodeGenerated: boolean;
   private userSessions: Map<string, string>;
+  private isReinitializing: boolean;
 
   constructor() {
+    const authStrategy = new LocalAuth({ dataPath: AUTH_DIRECTORY });
+
+    const originalLogout = authStrategy.logout.bind(authStrategy);
+    authStrategy.logout = async () => {
+      try {
+        await originalLogout();
+      } catch (err: any) {
+        if (err.code === 'ENOTEMPTY') {
+          console.warn('Directory not empty, forcing cleanup...');
+          fs.rmSync(AUTH_DIRECTORY, { recursive: true, force: true });
+        } else {
+          throw err;
+        }
+      }
+    };
+
     const clientOptions: any = {
-      authStrategy: new LocalAuth(),
+      authStrategy,
       dataPath: './session',
       puppeteer: {
         args: [
@@ -31,16 +43,14 @@ export class WhatsAppBot {
         ],
       }
     };
-    
-    if (process.env.NODE_ENV === 'production') {
-      clientOptions.puppeteer.executablePath = '/snap/bin/chromium';
-    }
     this.client = new Client(clientOptions);
+
     this.qrCodeGenerated = false;
     this.userSessions = new Map();
-  
+    this.isReinitializing = false;
+
     this.setupEventHandlers();
-  }  
+  }
 
   private setupEventHandlers() {
     this.client.on('qr', async (qrCode: string) => {
@@ -64,25 +74,40 @@ export class WhatsAppBot {
       }
     });
 
-    this.client.on('authenticated', () => {
-      console.log('Authenticated successfully!');
+    this.client.on('ready', () => {
+      console.log('WhatsApp bot is ready!');
     });
 
     this.client.on('auth_failure', (msg: string) => {
       console.error('Authentication failed:', msg);
     });
 
-    this.client.on('ready', () => {
-      console.log('WhatsApp bot is ready!');
-    });
-
-    this.client.on('disconnected', (reason: string) => {
+    this.client.on('disconnected', async (reason: string) => {
       console.log('Client was logged out:', reason);
+
+      if (this.isReinitializing) {
+        console.warn('Reinitialization already in progress. Skipping...');
+        return;
+      }
+
+      this.isReinitializing = true;
+
+      try {
+        console.log('Reinitializing client...');
+        this.qrCodeGenerated = false;
+        this.userSessions.clear();
+        await this.client.destroy(); // Cleanup before reinitializing
+        this.client.initialize();
+      } catch (error) {
+        console.error('Error during reinitialization:', error);
+      } finally {
+        this.isReinitializing = false;
+      }
     });
 
     this.client.on('message', async (message: Message) => {
-      const userId = message.from.split('@')[0];
-      if(!userId) return console.log(`Invalid userId: ${userId}`);
+      const userId = message.from;
+      if (!userId) return console.log(`Invalid userId: ${userId}`);
 
       console.log(`Message received from ${userId}:`, message.body);
 
@@ -96,15 +121,14 @@ export class WhatsAppBot {
 
       if (!userName) {
         this.userSessions.set(userId, message.body);
-        await createOrUpdateUser(userId, message.body);
-        await message.reply(`Nice to meet you, ${message.body}! How can I assist you today? you can type 'help' to see a list of commands`);
+        await message.reply(`Nice to meet you, ${message.body}! How can I assist you today?`);
         return;
       }
 
       const query = message.body.toLowerCase();
 
       if (query === 'help') {
-        await message.reply("type: 'exit' to end the session and 'reset' to reset the session");
+        await message.reply("Type 'exit' to end the session and 'reset' to reset the session.");
         return;
       }
 
@@ -120,19 +144,8 @@ export class WhatsAppBot {
         return;
       }
 
-      const faqAnswer = await getFaqAnswer(query);
-      let aiResponse = 'AI generated response';
-      if (faqAnswer) {
-        await message.reply(faqAnswer);
-      } else {
-        aiResponse = process.env.NODE_ENV === 'test' ? 'AI generated response' : await queryGenerativeAI(query);
-        await message.reply(aiResponse);
-      }
-
-      const user = await getUserByWhatsAppId(userId);
-      if (user) {
-        await logQuery(user.id, query, faqAnswer || aiResponse);
-      }
+      const response = `You said: "${query}". (This is a placeholder response.)`;
+      await message.reply(response);
     });
 
     this.client.on('message_ack', (message: Message, ack: number) => {
@@ -142,11 +155,6 @@ export class WhatsAppBot {
   }
 
   public initialize() {
-    if (fs.existsSync(QR_FILE_PATH)) {
-      console.log(`QR code already saved at ${QR_FILE_PATH}. Please use it for reconnection.`);
-    } else {
-      console.log('No saved QR code found. Generating a new QR code...');
-    }
     this.client.initialize();
   }
 
