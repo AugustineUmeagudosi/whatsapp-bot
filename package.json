@@ -6,8 +6,7 @@
     "scripts": {
         "migrate:generate": "npx prisma migrate dev",
         "migrate:deploy": "npx prisma migrate deploy",
-        "seed": "ts-node ./src/services/faqSeeder.ts",
-        "prestart": "npm run migrate:deploy && npm run seed",
+        "prestart": "npm run migrate:deploy",
         "pretest": "NODE_ENV=test DATABASE_URL=$(grep ^TEST_DB .env | cut -d '=' -f2) npm run migrate:deploy",
         "test": "NODE_ENV=test mocha --require ts-node/register test/**/*.test.ts --timeout 1000 --exit",
         "start": "ts-node index.ts"
