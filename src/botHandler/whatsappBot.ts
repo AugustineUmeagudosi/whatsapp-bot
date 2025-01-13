@@ -1,7 +1,13 @@
 import { Client, LocalAuth, Message } from 'whatsapp-web.js';
 import qrcode from 'qrcode';
 import fs from 'fs';
-import path from 'path';
+import {
+  createOrUpdateUser,
+  getUserByWhatsAppId,
+  getFaqAnswer,
+  logQuery,
+} from '../services/dbServices';
+import { queryGenerativeAI } from '../services/germini';
 
 const QR_FILE_PATH = './qr-code.json';
 const QR_IMAGE_PATH = './qr-code.png';
@@ -107,45 +113,47 @@ export class WhatsAppBot {
 
     this.client.on('message', async (message: Message) => {
       const userId = message.from;
-      if (!userId) return console.log(`Invalid userId: ${userId}`);
-
+      if(!userId) return console.log(`Invalid userId: ${userId}`);
       console.log(`Message received from ${userId}:`, message.body);
-
       if (!this.userSessions.has(userId)) {
         this.userSessions.set(userId, '');
         await message.reply("Hi! I'm Chaty, your support assistant. What's your name?");
         return;
       }
-
       const userName = this.userSessions.get(userId);
-
       if (!userName) {
         this.userSessions.set(userId, message.body);
-        await message.reply(`Nice to meet you, ${message.body}! How can I assist you today?`);
+        await createOrUpdateUser(userId, message.body);
+        await message.reply(`Nice to meet you, ${message.body}! How can I assist you today? you can type 'help' to see a list of commands`);
         return;
       }
-
       const query = message.body.toLowerCase();
-
       if (query === 'help') {
-        await message.reply("Type 'exit' to end the session and 'reset' to reset the session.");
+        await message.reply("type: 'exit' to end the session and 'reset' to reset the session");
         return;
       }
-
       if (query === 'exit') {
         this.userSessions.delete(userId);
         await message.reply('Your session has been ended. Have a great day!');
         return;
       }
-
       if (query === 'reset') {
         this.userSessions.set(userId, '');
         await message.reply("Let's start over. What's your name?");
         return;
       }
-
-      const response = `You said: "${query}". (This is a placeholder response.)`;
-      await message.reply(response);
+      const faqAnswer = await getFaqAnswer(query);
+      let aiResponse = 'AI generated response';
+      if (faqAnswer) {
+        await message.reply(faqAnswer);
+      } else {
+        aiResponse = process.env.NODE_ENV === 'test' ? 'AI generated response' : await queryGenerativeAI(query);
+        await message.reply(aiResponse);
+      }
+      const user = await getUserByWhatsAppId(userId);
+      if (user) {
+        await logQuery(user.id, query, faqAnswer || aiResponse);
+      }
     });
 
     this.client.on('message_ack', (message: Message, ack: number) => {
