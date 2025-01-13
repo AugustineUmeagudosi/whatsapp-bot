@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import { WhatsAppBot } from './src/botHandler/whatsappBot';
 import fs from 'fs';
 import path from 'path';
+import { seedFAQs } from './src/services/faqSeeder';
 
 const app = express();
 app.use(express.json());
@@ -38,8 +39,11 @@ if (process.env.NODE_ENV !== 'test') {
   bot.initialize();
 }
 
+seedFAQs();
+
 const server = app.listen(process.env.PORT || 3000, () => {
   console.log(`Server is running on http://localhost:${process.env.PORT || 3000}`);
 });
+
 
 export { app, server, bot };
